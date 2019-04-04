@@ -2,33 +2,23 @@ package prabhalab.client.location;
 import android.Manifest;
 import android.content.Intent;
 import android.content.pm.PackageManager;
-import android.location.Address;
-import android.location.Geocoder;
 import android.location.Location;
 import android.net.Uri;
-import android.nfc.Tag;
 import android.provider.Settings;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-import android.text.TextUtils;
 import android.util.Log;
 import android.view.View;
-import android.webkit.PermissionRequest;
 import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
-import com.google.android.gms.location.FusedLocationProviderClient;
 import com.karumi.dexter.Dexter;
 import com.karumi.dexter.PermissionToken;
 import com.karumi.dexter.listener.PermissionDeniedResponse;
 import com.karumi.dexter.listener.PermissionGrantedResponse;
 import com.karumi.dexter.listener.single.PermissionListener;
-
-import java.io.IOException;
-import java.util.List;
-import java.util.Locale;
 
 
 
