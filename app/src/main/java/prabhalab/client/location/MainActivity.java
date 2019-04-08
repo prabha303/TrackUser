@@ -1,9 +1,13 @@
 package prabhalab.client.location;
 import android.Manifest;
+import android.app.AlarmManager;
+import android.app.PendingIntent;
+import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.location.Location;
 import android.net.Uri;
+import android.os.SystemClock;
 import android.provider.Settings;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
@@ -49,6 +53,8 @@ public class MainActivity extends AppCompatActivity implements UpdateInterServic
             }
 
             Utility.getInstance().stayScreenOn(this);
+
+            gettimeutc();
         }catch (Exception e)
         {
             e.printStackTrace();
@@ -166,10 +172,22 @@ public class MainActivity extends AppCompatActivity implements UpdateInterServic
             mLatitude.setText(""+location.getLatitude());
             mLongitude.setText(""+location.getLongitude());
 
+
         }catch (Exception e)
         {
             e.printStackTrace();
         }
 
     }
+
+
+    private void gettimeutc() {
+
+        AlarmManager alarms = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
+        Intent intent = new Intent(MainActivity.this, RestartServiceBroadCastReceiver.class);
+        PendingIntent pendingIntent = PendingIntent.getBroadcast(this, 0, intent, PendingIntent.FLAG_CANCEL_CURRENT);
+        alarms.setExact(AlarmManager.ELAPSED_REALTIME_WAKEUP, SystemClock.elapsedRealtime()+30*1000, pendingIntent);
+
+    }
+
 }

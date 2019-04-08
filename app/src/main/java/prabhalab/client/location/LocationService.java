@@ -2,6 +2,7 @@ package prabhalab.client.location;
 
 import android.annotation.SuppressLint;
 import android.app.Activity;
+import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
@@ -17,6 +18,7 @@ import android.os.IBinder;
 import android.os.Looper;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
+import android.support.v4.app.NotificationCompat;
 import android.util.Log;
 import android.widget.Toast;
 
@@ -206,6 +208,25 @@ public class LocationService extends Service implements UpdateInterService {
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {  //onStartCommand() can get called multiple times.
         super.onStartCommand(intent, flags, startId);
+
+
+        Intent contentIntent = new Intent(LocationService.this,MainActivity.class);
+        contentIntent.putExtra("fromForgroundService",true);
+        contentIntent.setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
+        PendingIntent pendingIntent = PendingIntent.getActivity(LocationService.this, 0, contentIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+
+
+        NotificationCompat.Builder notification = new NotificationCompat.Builder(LocationService.this,getResources().getString(R.string.CHANNEL_ID));
+        notification.setContentTitle("LYNK")
+                .setContentText("App is running...")
+                .setSmallIcon(R.mipmap.ic_launcher)
+                .setContentIntent(pendingIntent);
+
+        stopForeground(true);
+
+        startForeground(Utility.forgroundservice_notification_id,notification.build());
+//        Log.e("forgrndservice","started");
+
         return START_STICKY;
     }
 
