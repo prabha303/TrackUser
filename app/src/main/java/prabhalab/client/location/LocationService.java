@@ -44,6 +44,16 @@ import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 
+import fr.bmartel.speedtest.SpeedTestReport;
+import fr.bmartel.speedtest.SpeedTestSocket;
+import fr.bmartel.speedtest.inter.ISpeedTestListener;
+import fr.bmartel.speedtest.model.SpeedTestError;
+import okhttp3.MediaType;
+import okhttp3.RequestBody;
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
+
 /**
  * Created by PrabhagaranR on 01-03-19.
  */
@@ -87,6 +97,8 @@ public class LocationService extends Service implements UpdateInterService {
     public void onCreate() {
         super.onCreate();
         reTryData();
+
+        sendDataToServer();
     }
 
     public void reTryData() {
@@ -110,6 +122,74 @@ public class LocationService extends Service implements UpdateInterService {
             e.printStackTrace();
         }
     }
+
+
+
+    public void sendDataToServer() {
+
+
+        try {
+            final Handler handlerRetry = new Handler();
+            final Runnable r = new Runnable() {
+                public void run() {
+                    try {
+
+                        getlocalSavedValues();
+
+                        handlerRetry.postDelayed(this, 20000);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }
+            };
+            handlerRetry.postDelayed(r, 20000);
+        } catch (Exception e) {
+
+            e.printStackTrace();
+        }
+
+    }
+
+
+
+    private  void getlocalSavedValues() {
+        JSONObject remainingData = JrWayDao.getSavedValues(context);
+        Log.d("remainingData",""+remainingData);
+        RequestBody body = RequestBody.create(MediaType.parse("application/json"), remainingData.toString());
+
+
+        Call<String> mServices = ApiUtils.getSOService().sendLocationToServer(body);
+
+
+        //RetrofitEndpoint mService = ApiUtils.getSOService();
+        mServices.enqueue(new Callback<String>() {
+            @Override
+            public void onResponse(Call<String> call, Response<String> response) {
+
+                if(response.isSuccessful()) {
+
+                    Log.d("MainActivity", "posts loaded from API");
+                }else {
+                    int statusCode  = response.code();
+                    Log.d("MainActivity", "gone error loaded from API" + statusCode);
+                    // handle request errors depending on status code
+                }
+            }
+
+            @Override
+            public void onFailure(Call<String> call, Throwable t) {
+
+                Log.d("MainActivity", "error loading from API" );
+
+            }
+        });
+
+    }
+
+
+
+
+
 
     private void intGPSTracker() {
         try {
@@ -217,7 +297,7 @@ public class LocationService extends Service implements UpdateInterService {
 
 
         NotificationCompat.Builder notification = new NotificationCompat.Builder(LocationService.this,getResources().getString(R.string.CHANNEL_ID));
-        notification.setContentTitle("LYNK")
+        notification.setContentTitle("LYNK v1 Driver")
                 .setContentText("App is running...")
                 .setSmallIcon(R.mipmap.ic_launcher)
                 .setContentIntent(pendingIntent);
@@ -242,7 +322,7 @@ public class LocationService extends Service implements UpdateInterService {
                     Log.d("Updated_Location - acc", ""+location.getAccuracy());
                     String resultMessage = "";
                     try {
-                        Geocoder geocoder = new Geocoder(this, Locale.getDefault());
+                        Geocoder geocoder = new Geocoder(context, Locale.getDefault());
                         List<Address> addresses = null;
 
                         try {
@@ -268,8 +348,44 @@ public class LocationService extends Service implements UpdateInterService {
                     {
                         e.printStackTrace();
                     }
+
+
+
+                    SpeedTestSocket speedTestSocket = new SpeedTestSocket();
+                    speedTestSocket.addSpeedTestListener(new ISpeedTestListener() {
+
+                        @Override
+                        public void onCompletion(SpeedTestReport report) {
+                            // called when download/upload is complete
+
+
+                            Log.d("PROGRESS_rate octet/s",""+report.getTransferRateOctet());
+                            Log.d("PROGRESS_rate bit/s",""+report.getTransferRateBit());
+
+                        }
+
+                        @Override
+                        public void onError(SpeedTestError speedTestError, String errorMessage) {
+
+                            Log.d("PROGRESS_Error",errorMessage);
+                            Log.d("PROGRESS_Error",speedTestError.name());
+                            // called when a download/upload error occur
+                        }
+
+                        @Override
+                        public void onProgress(float percent, SpeedTestReport report) {
+                            // called to notify download/upload progress
+                            Log.d("[PROGRESS] progress : ", + percent + "%");
+                            Log.d("[PROGRESS]rate octet/s:",""+ report.getTransferRateOctet());
+                            Log.d("[PROGRESS] rate bit/s",""+ report.getTransferRateBit());
+                        }
+                    });
+
+
+
+
                     updateInterService.doUpdateLocation(location,resultMessage);
-                    JrWayDao.insertUserDetails(context,location,resultMessage);
+                    JrWayDao.insertUserDetails(context,location,resultMessage, MainActivity.batteryPercentage);
 
                 }
 

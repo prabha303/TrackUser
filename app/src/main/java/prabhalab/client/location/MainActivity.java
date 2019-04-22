@@ -2,11 +2,14 @@ package prabhalab.client.location;
 import android.Manifest;
 import android.app.AlarmManager;
 import android.app.PendingIntent;
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.location.Location;
 import android.net.Uri;
+import android.os.BatteryManager;
 import android.os.SystemClock;
 import android.provider.Settings;
 import android.support.annotation.NonNull;
@@ -24,6 +27,15 @@ import com.karumi.dexter.listener.PermissionDeniedResponse;
 import com.karumi.dexter.listener.PermissionGrantedResponse;
 import com.karumi.dexter.listener.single.PermissionListener;
 
+import java.text.SimpleDateFormat;
+import java.util.Date;
+
+import okhttp3.MediaType;
+import okhttp3.RequestBody;
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
+import retrofit2.http.Body;
 
 
 /**
@@ -33,11 +45,12 @@ import com.karumi.dexter.listener.single.PermissionListener;
 public class MainActivity extends AppCompatActivity implements UpdateInterService {
     private static final int REQUEST_LOCATION_PERMISSION = 1;
     private static final String TAG = MainActivity.class.getSimpleName();
-    Button mGetQuoteLocation;
+    //Button mGetQuoteLocation;
     TextView mLatitude;
     TextView mLongitude;
     TextView mTimestamp;
     TextView mAddress;
+    public  static String batteryPercentage = "";
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -55,6 +68,13 @@ public class MainActivity extends AppCompatActivity implements UpdateInterServic
             Utility.getInstance().stayScreenOn(this);
 
             gettimeutc();
+
+            this.registerReceiver(this.mBatInfoReceiver, new IntentFilter(Intent.ACTION_BATTERY_CHANGED));
+
+
+
+
+
         }catch (Exception e)
         {
             e.printStackTrace();
@@ -86,12 +106,14 @@ public class MainActivity extends AppCompatActivity implements UpdateInterServic
             mTimestamp = findViewById(R.id.timestamp_value);
             mAddress =  findViewById(R.id.address_value);
 
-            mGetQuoteLocation = findViewById(R.id.get_location);
-            mGetQuoteLocation.setOnClickListener(new View.OnClickListener() {
+            //mGetQuoteLocation = findViewById(R.id.get_location);
+
+
+            /*mGetQuoteLocation.setOnClickListener(new View.OnClickListener() {
                 public void onClick(View v) {
                     getLocation();
                 }
-            });
+            });*/
         }catch (Exception e)
         {
             e.printStackTrace();
@@ -168,9 +190,20 @@ public class MainActivity extends AppCompatActivity implements UpdateInterServic
     public void doUpdateLocation(Location location, String address) {
         try
         {
+
+            long  timeMillis = System.currentTimeMillis();
+            Date curDateTime = new Date(timeMillis);
+            final SimpleDateFormat sdf = new SimpleDateFormat("dd-MM-yyyy HH:mm:ss");
+            final String dateTime = sdf.format(curDateTime);
+
             mAddress.setText(address);
             mLatitude.setText(""+location.getLatitude());
             mLongitude.setText(""+location.getLongitude());
+            mTimestamp.setText(dateTime);
+
+
+            mTimestamp.setText(Connectivity.isConnectedFast(MainActivity.this));
+
 
 
         }catch (Exception e)
@@ -179,6 +212,17 @@ public class MainActivity extends AppCompatActivity implements UpdateInterServic
         }
 
     }
+
+
+    private BroadcastReceiver mBatInfoReceiver = new BroadcastReceiver(){
+        @Override
+        public void onReceive(Context ctxt, Intent intent) {
+            int level = intent.getIntExtra(BatteryManager.EXTRA_LEVEL, 0);
+            batteryPercentage = String.valueOf(level) + "%";
+        }
+    };
+
+
 
 
     private void gettimeutc() {

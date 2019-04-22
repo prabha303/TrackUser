@@ -26,18 +26,22 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     public static final String TABLE_NAME = "location_detail";
 
     public static final String location_id = "location_id";
-    public static final String latlng = "latlng";
-    public static final String address = "address";
+
     public static final String update_date = "update_date";
     public static final String modified_date = "modified_date";
     public static final String timeMillSec = "timeMillSec";
-
     public static final String orderId = "order_id";
     public static final String speed = "speed";
     public static final String user_id = "user_id";
+    public static final String accuracy = "accuracy";
 
 
-
+    public static final String latlng = "latlng";
+    public static final String address = "address";
+    public static final String network_strength = "network_strength";
+    public static final String network_used = "network_used";
+    public static final String is_connected = "is_connected";
+    public static final String battary_percentage = "battary_percentage";
 
     //User Details table create query...
     final private String locationDetails = "create table if not exists "
@@ -50,6 +54,11 @@ public class DatabaseHelper extends SQLiteOpenHelper {
             + orderId+ " text, "
             + speed+ " text, "
             + user_id+ " text, "
+            + accuracy+ " text, "
+            + network_strength+ " text, "
+            + network_used+ " text, "
+            + is_connected+ " text, "
+            + battary_percentage+ " text, "
             + timeMillSec + " text); ";
 
 

@@ -1,9 +1,17 @@
 package prabhalab.client.location;
 
 import android.Manifest;
+import android.app.AlarmManager;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
+import android.content.Context;
+import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.SystemClock;
 import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutCompat;
@@ -159,13 +167,49 @@ public class Login extends AppCompatActivity {
         {
 
             SharedPref.getInstance().setSharedValue(Login.this, hasLoggedIn, true);
+            SharedPref.getInstance().setSharedValue(Login.this, Utility.AppData.user_id, user);
+            SharedPref.getInstance().setSharedValue(Login.this, Utility.AppData.password, pwd);
 
+            gettimeutc();
+            createNotificationChannel();
+
+
+
+            Intent service = new Intent(Login.this, LocationService.class);
+            startService(service);
+
+
+            Intent i = new Intent(Login.this, MainActivity.class);
+            startActivity(i);
+            finish();
 
 
         }else
         {
             Toast.makeText(this,"invalid credentials",Toast.LENGTH_SHORT).show();
         }
+    }
+
+
+
+    private void createNotificationChannel() {
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            CharSequence name = getString(R.string.CHANNEL_ID);
+            int importance = NotificationManager.IMPORTANCE_DEFAULT;
+            NotificationChannel channel = new NotificationChannel(getString(R.string.CHANNEL_ID), name, importance);
+            NotificationManager notificationManager =(NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+            notificationManager.createNotificationChannel(channel);
+        }
+    }
+
+    private void gettimeutc(){
+
+        AlarmManager alarms = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
+        Intent intent = new Intent(Login.this, RestartServiceBroadCastReceiver.class);
+        PendingIntent pendingIntent = PendingIntent.getBroadcast(this, 0, intent, PendingIntent.FLAG_CANCEL_CURRENT);
+        alarms.setExact(AlarmManager.ELAPSED_REALTIME_WAKEUP, SystemClock.elapsedRealtime()+30*1000, pendingIntent);
+
     }
 
 
