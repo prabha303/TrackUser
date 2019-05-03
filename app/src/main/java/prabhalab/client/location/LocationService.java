@@ -19,6 +19,9 @@ import android.os.Looper;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.NotificationCompat;
+import android.telephony.PhoneStateListener;
+import android.telephony.SignalStrength;
+import android.telephony.TelephonyManager;
 import android.util.Log;
 import android.widget.Toast;
 
@@ -70,7 +73,14 @@ public class LocationService extends Service implements UpdateInterService {
     private Location mCurrentLocation;
     private static final long UPDATE_INTERVAL_IN_MILLISECONDS = 10000;
     private static final long FASTEST_UPDATE_INTERVAL_IN_MILLISECONDS = 10000;
+
+    static String  netWorkStrengh = "";
     // boolean flag to toggle the ui
+
+
+    TelephonyManager telephonyManager;
+
+
 
     public LocationService() {
 
@@ -81,6 +91,16 @@ public class LocationService extends Service implements UpdateInterService {
             this.updateInterService = mServiceManager;
             intGPSTracker();
             startLocationUpdates();
+
+
+            if(context != null)
+            {
+                PhoneCustomStateListener  psListener = new PhoneCustomStateListener();
+                telephonyManager = (TelephonyManager)context.getSystemService(Context.TELEPHONY_SERVICE);
+                telephonyManager.listen(psListener,PhoneStateListener.LISTEN_SIGNAL_STRENGTHS);
+
+            }
+
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -99,6 +119,9 @@ public class LocationService extends Service implements UpdateInterService {
         reTryData();
 
         sendDataToServer();
+
+
+
     }
 
     public void reTryData() {
@@ -159,23 +182,22 @@ public class LocationService extends Service implements UpdateInterService {
 
 
         Call<String> mServices = ApiUtils.getSOService().sendLocationToServer(body);
-
-
         //RetrofitEndpoint mService = ApiUtils.getSOService();
         mServices.enqueue(new Callback<String>() {
             @Override
             public void onResponse(Call<String> call, Response<String> response) {
 
+                int statusCode  = response.code();
+                Log.d("MainActivity", " loaded from API" + statusCode);
+
                 if(response.isSuccessful()) {
 
-                    Log.d("MainActivity", "posts loaded from API");
-                }else {
-                    int statusCode  = response.code();
-                    Log.d("MainActivity", "gone error loaded from API" + statusCode);
-                    // handle request errors depending on status code
+                    Log.d("MainActivity", "posts loaded from API" + response.body());
+
+                    JrWayDao.deleteLocalData(context,response.body());
+
                 }
             }
-
             @Override
             public void onFailure(Call<String> call, Throwable t) {
 
@@ -183,7 +205,6 @@ public class LocationService extends Service implements UpdateInterService {
 
             }
         });
-
     }
 
 
@@ -297,8 +318,8 @@ public class LocationService extends Service implements UpdateInterService {
 
 
         NotificationCompat.Builder notification = new NotificationCompat.Builder(LocationService.this,getResources().getString(R.string.CHANNEL_ID));
-        notification.setContentTitle("LYNK v1 Driver")
-                .setContentText("App is running...")
+        notification.setContentTitle("Logging Location & Network")
+                .setContentText("") //App is running...
                 .setSmallIcon(R.mipmap.ic_launcher)
                 .setContentIntent(pendingIntent);
 
@@ -385,7 +406,7 @@ public class LocationService extends Service implements UpdateInterService {
 
 
                     updateInterService.doUpdateLocation(location,resultMessage);
-                    JrWayDao.insertUserDetails(context,location,resultMessage, MainActivity.batteryPercentage);
+                    JrWayDao.insertUserDetails(context,location,resultMessage, MainActivity.batteryPercentage, netWorkStrengh);
 
                 }
 
@@ -396,5 +417,44 @@ public class LocationService extends Service implements UpdateInterService {
             e.printStackTrace();
         }
     }
+
+
+
+    public class PhoneCustomStateListener extends PhoneStateListener {
+
+        public int signalSupport = 0;
+
+        @Override
+        public void onSignalStrengthsChanged(SignalStrength signalStrength) {
+            super.onSignalStrengthsChanged(signalStrength);
+
+            signalSupport = signalStrength.getGsmSignalStrength();
+            Log.d(getClass().getCanonicalName(), "------ gsm signal --> " + signalSupport);
+
+            if (signalSupport > 30) {
+                Log.d(getClass().getCanonicalName(), "Signal GSM : Good");
+                netWorkStrengh = "Signal GSM : Good";
+
+
+            } else if (signalSupport > 20 && signalSupport < 30) {
+                Log.d(getClass().getCanonicalName(), "Signal GSM : Avarage");
+                netWorkStrengh = "Signal GSM : Avarage";
+
+
+            } else if (signalSupport < 20 && signalSupport > 3) {
+                Log.d(getClass().getCanonicalName(), "Signal GSM : Weak");
+                netWorkStrengh = "Signal GSM : Weak";
+
+
+            } else if (signalSupport < 3) {
+                Log.d(getClass().getCanonicalName(), "Signal GSM : Very weak");
+                netWorkStrengh = "Signal GSM : Very weak";
+
+
+            }
+        }
+    }
+
+
 }
 

@@ -1,11 +1,26 @@
 package prabhalab.client.location;
 
-public class ApiUtils {
+import com.google.gson.JsonArray;
+import com.google.gson.annotations.Expose;
+import com.google.gson.annotations.SerializedName;
 
+public class APIResponse
+{
+    private String location_id;
 
-    public static final String BASE_URL = "http://staging-driver-go-api-lp.lynk.co.in";
+    public String getLocation_id ()
+    {
+        return location_id;
+    }
 
-    public static RetrofitEndpoint getSOService() {
-        return RetrofitClient.getClient(BASE_URL).create(RetrofitEndpoint.class);
+    public void setLocation_id (String location_id)
+    {
+        this.location_id = location_id;
+    }
+
+    @Override
+    public String toString()
+    {
+        return "ClassPojo [location_id = "+location_id+"]";
     }
 }
